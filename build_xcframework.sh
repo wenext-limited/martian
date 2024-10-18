@@ -47,9 +47,11 @@ find "$XCFRAMEWORK_OUTPUT" -name "*.h" -type f | while read -r header_file; do
     sed -i '' 's/#include "mars\//#include "/g' "$header_file"
 done
 
+cd cmake_build
+
 # Compress the xcframework for distribution
-zip -r $XCFRAMEWORK_OUTPUT.zip $XCFRAMEWORK_OUTPUT
-ZIP_NAME=$XCFRAMEWORK_OUTPUT.zip
+zip -r mars.xcframework.zip mars.xcframework
+ZIP_NAME=mars.xcframework.zip
 
 # Compute checksum using swift package manager
 CHECKSUM=$(swift package compute-checksum $ZIP_NAME)
