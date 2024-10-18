@@ -12,11 +12,8 @@ BUILD_OUT_PATH = 'cmake_build/OSX'
 INSTALL_PATH = BUILD_OUT_PATH + '/Darwin.out'
 
 OSX_BUILD_OS_CMD = 'cmake ../.. -DCMAKE_BUILD_TYPE=Release -DENABLE_ARC=0 -DENABLE_BITCODE=0 && make -j8 && make install'
-
-OSX_BUILD_ARM_CMD = 'cmake -S ../.. -D . -DCMAKE_TOOLCHAIN_FILE=../../ios.toolchain.cmake -DPLATFORM=MAC_ARM64 -DCMAKE_BUILD_TYPE=Release -DENABLE_ARC=0 -DENABLE_BITCODE=0 -DCMAKE_OSX_ARCHITECTURES="arm64" && make -j8 && make install'
-
-OSX_BUILD_X86_CMD = 'cmake -S ../.. -D . -DCMAKE_TOOLCHAIN_FILE=../../ios.toolchain.cmake --DPLATFORM=MAC -DCMAKE_BUILD_TYPE=Release -DENABLE_ARC=0 -DENABLE_BITCODE=0 -DCMAKE_OSX_ARCHITECTURES="x86_64" && make -j8 && make install'
-
+OSX_BUILD_ARM_CMD = 'cmake -S ../.. -B . -DCMAKE_TOOLCHAIN_FILE=../../ios.toolchain.cmake -DPLATFORM=MAC_ARM64 -DCMAKE_BUILD_TYPE=Release -DENABLE_ARC=0 -DENABLE_BITCODE=0 && make -j8 && make install'
+OSX_BUILD_X86_CMD = 'cmake -S ../.. -B . -DCMAKE_TOOLCHAIN_FILE=../../ios.toolchain.cmake -DPLATFORM=MAC -DCMAKE_BUILD_TYPE=Release -DENABLE_ARC=0 -DENABLE_BITCODE=0 && make -j8 && make install'
 GEN_OSX_PROJ = 'cmake ../.. -G Xcode -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=10.9 -DENABLE_BITCODE=0'
 
 def build_osx(tag=''):
@@ -84,7 +81,7 @@ def build_osx_xlog(tag=''):
     lipo_src_libs = []
     lipo_src_libs.append(libtool_arm_dst_lib)
     lipo_src_libs.append(libtool_x86_dst_lib)
-    lipo_dst_lib = INSTALL_PATH + '/mars'
+    lipo_dst_lib = INSTALL_PATH + '/mars.a'
 
     if not lipo_libs(lipo_src_libs, lipo_dst_lib):
         return False
@@ -109,27 +106,29 @@ def gen_ios_project():
 
     return True
 
+# return True if the menu is valid
+def choose_menu(num) -> bool:
+    if num == '1':
+        build_osx()
+    elif num == '2':
+        gen_ios_project()
+    elif num == '3':
+        build_osx_xlog()
+    else:
+        return False
+
+    return True
+
 def main():
-    while True:
-        if len(sys.argv) >= 2:
+    if len(sys.argv) >= 2:
+        # suppse the last argument is the menu number
+        if not choose_menu(sys.argv[-1]):
             build_osx(sys.argv[1])
-            break
-        else:
-            num = input('Enter menu:\n1. Clean && build.\n2. Gen OSX Project.\n3. Build xlog.\n4. Exit\n')
-            if num == '1':
-                build_osx()
-                break
-            elif num == '2':
-                gen_ios_project()
-                break
-            elif num == '3':
-                build_osx_xlog()
-                break
-            elif num == '4':
-                break
-            else:
-                build_osx()
-                break
+    else:
+        num = input('Enter menu:\n1. Clean && build.\n2. Gen OSX Project.\n3. Build xlog.\n4. Exit\n')
+        if not choose_menu(num):
+            build_osx()
+
 
 if __name__ == '__main__':
     main()

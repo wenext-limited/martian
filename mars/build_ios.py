@@ -17,6 +17,8 @@ IOS_BUILD_OS_CMD = 'cmake -S ../.. -B . -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLC
 GEN_IOS_OS_PROJ = 'cmake ../.. -G Xcode -DCMAKE_TOOLCHAIN_FILE=../../ios.toolchain.cmake -DPLATFORM=OS -DIOS_ARCH="arm64" -DENABLE_ARC=0 -DENABLE_BITCODE=0 -DENABLE_VISIBILITY=1'
 OPEN_SSL_ARCHS = ['x86_64', 'arm64']
 
+IOS_BUILD_OUT_PATH = INSTALL_PATH + '/iOS'
+IOS_SIMULATOR_BUILD_OUT_PATH = INSTALL_PATH + '/iOS.simulator'
 
 def build_ios(tag=''):
     gen_mars_revision_file('comm', tag)
@@ -78,50 +80,46 @@ def build_ios(tag=''):
 def build_ios_xlog(tag=''):
     gen_mars_revision_file('comm', tag)
 
-    clean(BUILD_OUT_PATH)
-    os.chdir(BUILD_OUT_PATH)
-
-    ret = os.system(IOS_BUILD_OS_CMD)
-    os.chdir(SCRIPT_PATH)
-    if ret != 0:
-        print('!!!!!!!!!!!build os fail!!!!!!!!!!!!!!!')
-        return False
-
-    libtool_os_dst_lib = INSTALL_PATH + '/os'
     libtool_src_libs = [INSTALL_PATH + '/libcomm.a',
                         INSTALL_PATH + '/libmars-boost.a',
                         INSTALL_PATH + '/libxlog.a',
                         BUILD_OUT_PATH + '/zstd/libzstd.a']
-    if not libtool_libs(libtool_src_libs, libtool_os_dst_lib):
-        return False
 
-    clean(BUILD_OUT_PATH)
-    os.chdir(BUILD_OUT_PATH)
-    ret = os.system(IOS_BUILD_SIMULATOR_CMD)
-    os.chdir(SCRIPT_PATH)
-    if ret != 0:
-        print('!!!!!!!!!!!build simulator fail!!!!!!!!!!!!!!!')
-        return False
+    def build(platform):
+        if platform == 'OS':
+            build_cmd = IOS_BUILD_OS_CMD
+            build_out_path = IOS_BUILD_OUT_PATH
+            dst_framework_path = INSTALL_PATH + '/mars.ios.framework'
+        elif platform == 'SIMULATOR':
+            build_cmd = IOS_BUILD_SIMULATOR_CMD
+            build_out_path = IOS_SIMULATOR_BUILD_OUT_PATH
+            dst_framework_path = INSTALL_PATH + '/mars.simulator.framework'
+        else:
+            # fatal error
+            return False
 
-    libtool_simulator_dst_lib = INSTALL_PATH + '/simulator'
-    if not libtool_libs(libtool_src_libs, libtool_simulator_dst_lib):
-        return False
+        if not os.path.exists(build_out_path):
+            os.makedirs(build_out_path)
+        clean(BUILD_OUT_PATH)
+        os.chdir(BUILD_OUT_PATH)
+        ret = os.system(build_cmd)
+        os.chdir(SCRIPT_PATH)
+        if ret != 0:
+            print('!!!!!!!!!!!build ' + platform + ' fail!!!!!!!!!!!!!!!')
+            return False
 
-    lipo_src_libs = []
-    lipo_src_libs.append(libtool_os_dst_lib)
-    lipo_src_libs.append(libtool_simulator_dst_lib)
-    lipo_dst_lib = INSTALL_PATH + '/mars'
+        libtool_dst_lib = build_out_path + '/mars.a'
+        if not libtool_libs(libtool_src_libs, libtool_dst_lib):
+            return False
 
-    if not lipo_libs(lipo_src_libs, lipo_dst_lib):
-        return False
+        make_static_framework(libtool_dst_lib, dst_framework_path, XLOG_COPY_HEADER_FILES, '../')
 
-    dst_framework_path = INSTALL_PATH + '/mars.framework'
-    make_static_framework(lipo_dst_lib, dst_framework_path, XLOG_COPY_HEADER_FILES, '../')
-
-    print('==================Output========================')
-    print(dst_framework_path)
+        print('==================Output========================')
+        print(dst_framework_path)
 
 
+    build('OS')
+    build('SIMULATOR')
 
 def gen_ios_project():
     gen_mars_revision_file('comm')
@@ -140,27 +138,27 @@ def gen_ios_project():
 
     return True
 
+# return True if the menu is valid
+def choose_menu(num) -> bool:
+    if num == '1':
+        build_ios()
+    if num == '2':
+        build_ios_xlog()
+    elif num == '3':
+        gen_ios_project()
+    else:
+        return False
+    return True
+
 def main():
-    while True:
-        if len(sys.argv) >= 2:
+    if len(sys.argv) >= 2:
+        # suppose the menu number is the last of sys.argv
+        if not choose_menu(sys.argv[-1]):
             build_ios(sys.argv[1])
-            break
-        else:
-            num = input('Enter menu:\n1. Clean && build mars.\n2. Clean && build xlog.\n3. Gen iOS mars Project.\n4. Exit\n')
-            if num == '1':
-                build_ios()
-                break
-            if num == '2':
-                build_ios_xlog()
-                break
-            elif num == '3':
-                gen_ios_project()
-                break
-            elif num == '4':
-                break
-            else:
-                build_ios()
-                break
+    else:
+        num = input('Enter menu:\n1. Clean && build mars.\n2. Clean && build xlog.\n3. Gen iOS mars Project.\n4. Exit\n')
+        if (not choose_menu(num)) and num != '4':
+            build_ios()
 
 if __name__ == '__main__':
     main()

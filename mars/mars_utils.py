@@ -205,6 +205,9 @@ def clean_except(path, except_list):
 def clean(path, incremental=False):
     if not incremental:
         for fpath, dirs, fs in os.walk(path):
+            # ignore .framework
+            if '.framework' in fpath:
+                continue
             remove_cmake_files(fpath)
 
     if not os.path.exists(path):
