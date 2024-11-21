@@ -12,6 +12,7 @@ BUILD_OUT_PATH = 'cmake_build/iOS'
 INSTALL_PATH = BUILD_OUT_PATH + '/iOS.out'
 
 IOS_BUILD_SIMULATOR_CMD = 'cmake -S ../.. -B . -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../../ios.toolchain.cmake -DPLATFORM=SIMULATORARM64 -DENABLE_ARC=0 -DENABLE_BITCODE=0 -DENABLE_VISIBILITY=1 && make -j8 && make install'
+IOS_BUILD_SIMULATOR_X86_CMD = 'cmake -S ../.. -B . -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../../ios.toolchain.cmake -DPLATFORM=SIMULATOR64 -DENABLE_ARC=0 -DENABLE_BITCODE=0 -DENABLE_VISIBILITY=1 && make -j8 && make install'
 IOS_BUILD_OS_CMD = 'cmake -S ../.. -B . -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../../ios.toolchain.cmake -DPLATFORM=OS64 -DENABLE_ARC=0 -DENABLE_BITCODE=0 -DENABLE_VISIBILITY=1 && make -j8 && make install'
 
 GEN_IOS_OS_PROJ = 'cmake ../.. -G Xcode -DCMAKE_TOOLCHAIN_FILE=../../ios.toolchain.cmake -DPLATFORM=OS -DIOS_ARCH="arm64" -DENABLE_ARC=0 -DENABLE_BITCODE=0 -DENABLE_VISIBILITY=1'
@@ -19,6 +20,7 @@ OPEN_SSL_ARCHS = ['x86_64', 'arm64']
 
 IOS_BUILD_OUT_PATH = INSTALL_PATH + '/iOS'
 IOS_SIMULATOR_BUILD_OUT_PATH = INSTALL_PATH + '/iOS.simulator'
+IOS_SIMULATOR_X86_BUILD_OUT_PATH = INSTALL_PATH + '/iOS.simulator_x86'
 
 def build_ios(tag=''):
     gen_mars_revision_file('comm', tag)
@@ -94,6 +96,10 @@ def build_ios_xlog(tag=''):
             build_cmd = IOS_BUILD_SIMULATOR_CMD
             build_out_path = IOS_SIMULATOR_BUILD_OUT_PATH
             dst_framework_path = INSTALL_PATH + '/mars.simulator.framework'
+        elif platform == 'SIMULATOR_X86':
+            build_cmd = IOS_BUILD_SIMULATOR_X86_CMD
+            build_out_path = IOS_SIMULATOR_X86_BUILD_OUT_PATH
+            dst_framework_path = INSTALL_PATH + '/mars.simulator_x86.framework'
         else:
             # fatal error
             return False
@@ -120,6 +126,7 @@ def build_ios_xlog(tag=''):
 
     build('OS')
     build('SIMULATOR')
+    build('SIMULATOR_X86')
 
 def gen_ios_project():
     gen_mars_revision_file('comm')

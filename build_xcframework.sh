@@ -5,6 +5,7 @@
 # Define repeated path constants
 IOS_DEVICE_DIR="cmake_build/iOS/iOS.out/mars.ios.framework"
 IOS_SIMULATOR_DIR="cmake_build/iOS/iOS.out/mars.simulator.framework"
+IOS_SIMULATOR_X86_DIR="cmake_build/iOS/iOS.out/mars.simulator_x86.framework"
 MACOS_FRAMEWORK_DIR="cmake_build/OSX/Darwin.out/mars.framework"
 XCFRAMEWORK_OUTPUT="cmake_build/mars.xcframework"
 
@@ -18,7 +19,12 @@ python3 build_osx.py 3
 # Define library binary paths (assuming static or dynamic libraries inside the framework)
 IOS_DEVICE_LIB="$IOS_DEVICE_DIR/mars.a"
 IOS_SIMULATOR_LIB="$IOS_SIMULATOR_DIR/mars.a"
+IOS_SIMULATOR_X86_LIB="$IOS_SIMULATOR_X86_DIR/mars.a"
 MACOS_LIB="$MACOS_FRAMEWORK_DIR/mars.a"
+
+IOS_SIMULATOR_UNIVERSAL_LIB="cmake_build/mars.a"
+
+lipo -create "$IOS_SIMULATOR_LIB" "$IOS_SIMULATOR_X86_LIB" -output "$IOS_SIMULATOR_UNIVERSAL_LIB"
 
 # Define header path (assuming the headers are inside a "Headers" directory)
 HEADERS_PATH="$IOS_DEVICE_DIR/Headers"
@@ -34,7 +40,7 @@ echo "Creating mars.xcframework..."
 
 xcodebuild -create-xcframework \
     -library "$IOS_DEVICE_LIB" -headers "$HEADERS_PATH" \
-    -library "$IOS_SIMULATOR_LIB" -headers "$HEADERS_PATH" \
+    -library "$IOS_SIMULATOR_UNIVERSAL_LIB" -headers "$HEADERS_PATH" \
     -library "$MACOS_LIB" -headers "$HEADERS_PATH" \
     -output "$XCFRAMEWORK_OUTPUT"
 
